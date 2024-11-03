@@ -1,0 +1,85 @@
+import requests
+import pandas as pd
+from google.colab import files
+from spotipy.oauth2 import SpotifyClientCredentials
+import spotipy
+import time
+
+# Set up Spotify credentials
+CLIENT_ID = '0dc8a4a364b14b50aa1d64075e3f6a92'
+CLIENT_SECRET = 'a739f227efd7423f90649f0d0f477e13'
+
+# Authenticate with Spotify API
+auth_manager = SpotifyClientCredentials(client_id=CLIENT_ID, client_secret=CLIENT_SECRET)
+sp = spotipy.Spotify(auth_manager=auth_manager)
+
+# Function to get BPM (tempo) of a song from Spotify API
+def get_bpm_from_spotify(song_name):
+    try:
+        # Search for the song by name
+        result = sp.search(q=song_name, type='track', limit=1)
+        if result['tracks']['items']:
+            track_id = result['tracks']['items'][0]['id']
+            
+            # Get audio features, including BPM, using the track ID
+            audio_features = sp.audio_features(track_id)
+            if audio_features:
+                bpm = audio_features[0]['tempo']
+                return bpm
+    except Exception as e:
+        print(f"Error fetching BPM for {song_name}: {e}")
+    
+    return None  # Return None if BPM not found or any error occurs
+
+# Define your list of songs here
+song_list = [
+"Sticky (feat. GloRilla, Sexyy Red & Lil Wayne)",
+"Thought I Was Dead (feat. ScHoolboy Q & Santigold)",
+"Get Away!",
+"Space Heater",
+"My Way Home",
+"Guess What Bitch, We Back Hoe!",
+"Something's Got A Hold On Me",
+"Maintenance Man (feat. Jenn Carter, Dee Billz)",
+"PICK UP THE PHONE (feat. Nate Dogg)",
+"If You Don't Want My Love",
+"Everyday Hustle",
+"Picture in My Mind",
+"Come Get To This",
+"NISSAN ALTIMA",
+"Suavecito",
+"Just Hold Me",
+"Visions",
+"Stop This Train",
+"ON THE RADAR CONCRETE CYPHER (feat. Lil Yachty, Camo!, KARRAHBOOO, Dc2trill, Draft Day)",
+"Mason Cafe",
+"Enemies",
+"SportsCenter",
+"Mr.Trouble",
+"Morning Calculations",
+"89 Earthquake",
+"Smoothies In 1991",
+"Boogieman",
+"Check Out",
+"Happy Music",
+    # Add more songs as needed
+]
+
+# Create a DataFrame to store results
+df = pd.DataFrame({'song_name': song_list, 'bpm': None})
+
+# Loop through the song list and retrieve BPMs
+for index, row in df.iterrows():
+    song_name = row['song_name']
+    bpm = get_bpm_from_spotify(song_name)
+    print(f"Song: {song_name}, BPM: {bpm}")
+    df.at[index, 'bpm'] = bpm  # Update BPM in DataFrame
+    time.sleep(1)  # Add a delay to avoid rate limiting
+
+# Save to CSV
+output_filename = 'songs_with_bpm_spotify.csv'
+df.to_csv(output_filename, index=False)
+print(f"BPMs added and saved to {output_filename}")
+
+# Download the CSV file
+files.download(output_filename)
